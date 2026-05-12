@@ -6,7 +6,7 @@
   Из index.js не допускается что то экспортировать
 */
 
-import { createCardElement } from "./components/card.js";
+import { createCardElement, deleteCard, updateLike } from "./components/card.js";
 import { openModalWindow, closeModalWindow, setCloseModalWindowEventListeners } from "./components/modal.js";
 import { enableValidation, clearValidation } from "./components/validation.js";
 import { getUserInfo, getCardList, setUserInfo, setUserAvatar, addNewCard, deleteCardApi, changeLikeCardStatus } from "./components/api.js";
@@ -76,7 +76,7 @@ const handlePreviewPicture = ({ name, link }) => {
 const handleDeleteCard = (cardId, cardElement) => {
   deleteCardApi(cardId)
     .then(() => {
-      cardElement.remove();
+      deleteCard(cardElement);
     })
     .catch((err) => console.log(err));
 };
@@ -84,8 +84,7 @@ const handleDeleteCard = (cardId, cardElement) => {
 const handleLikeCard = (cardId, isLiked, likeButton, likeCount) => {
   changeLikeCardStatus(cardId, isLiked)
     .then((cardData) => {
-      likeButton.classList.toggle("card__like-button_is-active");
-      likeCount.textContent = cardData.likes.length;
+      updateLike(cardData.likes, likeButton, likeCount);
     })
     .catch((err) => console.log(err));
 };
@@ -151,20 +150,23 @@ const handleLogoClick = () => {
       infoModalTitle.textContent = "Статистика карточек";
       infoModalText.textContent = "Активные авторы";
 
-      infoModalInfoList.append(
-        createInfoString("Всего карточек:", cards.length)
-      );
+      const authors = {};
+      cards.forEach((card) => {
+        authors[card.owner.name] = (authors[card.owner.name] || 0) + 1;
+      });
+
+      const uniqueUsers = Object.keys(authors).length;
+      const maxCards = Math.max(...Object.values(authors));
+
+      infoModalInfoList.append(createInfoString("Всего карточек:", cards.length));
+      infoModalInfoList.append(createInfoString("Всего пользователей:", uniqueUsers));
+      infoModalInfoList.append(createInfoString("Максимум карточек от одного:", maxCards));
       infoModalInfoList.append(
         createInfoString("Первая создана:", formatDate(new Date(cards[cards.length - 1].createdAt)))
       );
       infoModalInfoList.append(
         createInfoString("Последняя создана:", formatDate(new Date(cards[0].createdAt)))
       );
-
-      const authors = {};
-      cards.forEach((card) => {
-        authors[card.owner.name] = (authors[card.owner.name] || 0) + 1;
-      });
 
       Object.entries(authors)
         .sort((a, b) => b[1] - a[1])
@@ -236,7 +238,7 @@ Promise.all([getCardList(), getUserInfo()])
   })
   .catch((err) => console.log(err));
 
-// Настраиваем обработчики закрытия попапов
+// обработчики закрытия попапов
 const allPopups = document.querySelectorAll(".popup");
 allPopups.forEach((popup) => {
   setCloseModalWindowEventListeners(popup);

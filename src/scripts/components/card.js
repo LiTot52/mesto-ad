@@ -5,6 +5,18 @@ const getTemplate = () => {
     .cloneNode(true);
 };
 
+export const deleteCard = (cardElement) => {
+  cardElement.remove();
+};
+
+export const updateLike = (likes, likeButton, likeCount) => {
+  likeButton.classList.toggle(
+    "card__like-button_is-active",
+    likes.some((user) => user._id === likeButton.dataset.ownerId)
+  );
+  likeCount.textContent = likes.length;
+};
+
 export const createCardElement = (
   data,
   { onPreviewPicture, onLikeIcon, onDeleteCard },
@@ -20,18 +32,15 @@ export const createCardElement = (
   cardImage.alt = data.name;
   cardElement.querySelector(".card__title").textContent = data.name;
 
-  // Показываем количество лайков
   if (likeCount) {
     likeCount.textContent = data.likes.length;
   }
 
-  // Проверяем, лайкнул ли текущий пользователь карточку
   const isLiked = data.likes.some((user) => user._id === currentUserId);
   if (isLiked) {
     likeButton.classList.add("card__like-button_is-active");
   }
 
-  // Скрываем кнопку удаления если карточка чужая
   if (data.owner._id !== currentUserId) {
     deleteButton.remove();
   }
